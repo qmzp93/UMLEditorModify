@@ -60,6 +60,26 @@ public class BasicClass extends JPanel implements IFuncComponent, IClassPainter
 		{
 			paintSelect(g);
 		}
+		if (cph.mouseHoverPoint != null && cph.isInside(this, cph.mouseHoverPoint))
+		{
+			// 利用原專案的 AreaDefine，傳入自己的 Location、Size 與滑鼠絕對座標點
+			int side = new Define.AreaDefine().getArea(this.getLocation(), this.getSize(), cph.mouseHoverPoint);
+			
+			// int  side = 3;
+			if (side != -1)
+			{
+				g.setColor(Color.RED);
+				int r = 10; // 紅點直徑
+				int w = this.getWidth();
+				int h = this.getHeight();
+				
+				// 依據 side 繪製於該 Port 的內部相對座標，並扣除半徑 r/2 讓圓心完美對齊邊線
+				if (side == 3) g.fillOval(w / 2 - r / 2, 0 - r / 2, r, r);         // TOP
+				else if (side == 2) g.fillOval(w - r / 2, h / 2 - r / 2, r, r);    // RIGHT
+				else if (side == 1) g.fillOval(0 - r / 2, h / 2 - r / 2, r, r);    // LEFT
+				else if (side == 0) g.fillOval(w / 2 - r / 2, h - r / 2, r, r);    // BOTTOM
+			}
+		}
 	}
 
 	@Override

@@ -64,7 +64,23 @@ public class CPHActionListener extends HandlerActionListener
 	@Override
 	public void mouseMoved(MouseEvent arg0)
 	{
-		// TODO Auto-generated method stub
+		CanvasPanelHandler cph = (CanvasPanelHandler) handler;
+		int currMode = cph.getCurrentMode();
+		
+		// 規格要求：僅在任何建立 line 的模式下觸發 (1, 2, 3, 6)
+		if (currMode == 1 || currMode == 2 || currMode == 3 || currMode == 6)
+		{
+			cph.mouseHoverPoint = arg0.getPoint(); // 直接記錄滑鼠在畫布上的絕對座標
+			cph.repaintComp(); // 觸發畫布重繪
+		}
+		else
+		{
+			if (cph.mouseHoverPoint != null)
+			{
+				cph.clearHover();
+				cph.repaintComp();
+			}
+		}
 	}
 
 	void clear()

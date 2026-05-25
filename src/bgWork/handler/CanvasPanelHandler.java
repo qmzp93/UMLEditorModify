@@ -29,6 +29,8 @@ public class CanvasPanelHandler extends PanelHandler
 	Vector <JPanel>	selectComp	= new Vector <>();
 	int				boundShift	= 10;
 
+	public Point mouseHoverPoint = null;
+
 	public CanvasPanelHandler(JPanel Container, InitProcess process)
 	{
 		super(Container, process);
@@ -50,7 +52,10 @@ public class CanvasPanelHandler extends PanelHandler
 		contextPanel.setVisible(true);
 		contextPanel.setBackground(Color.WHITE);
 		contextPanel.setBorder(new LineBorder(Color.BLACK));
-		contextPanel.addMouseListener(new CPHActionListener(this));
+
+		CPHActionListener listener = new CPHActionListener(this);
+		contextPanel.addMouseListener(listener);
+		contextPanel.addMouseMotionListener(listener);
 	}
 
 	@Override
@@ -539,5 +544,18 @@ public class CanvasPanelHandler extends PanelHandler
 			location.y += panel.getLocation().y;
 		}
 		return location;
+	}
+
+	public void clearHover()
+	{
+		mouseHoverPoint = null;
+	}
+
+	public int getCurrentMode()
+	{
+		if (this.core != null) {
+			return this.core.getCurrentFuncIndex();
+		}
+		return -1;
 	}
 }
