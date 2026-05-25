@@ -550,6 +550,9 @@ public class CanvasPanelHandler extends PanelHandler
 			case 5:
 				((GroupContainer) obj).setSelect(isSelect);
 				break;
+			case 6:
+				((DependencyLine) obj).setSelect(isSelect);
+				break;
 			default:
 				break;
 		}
