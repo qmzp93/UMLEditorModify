@@ -147,9 +147,9 @@ public class CompositionLine extends JPanel
 	@Override
 	public void paintSelect(Graphics gra)
 	{
-		gra.setColor(Color.BLACK);
-		gra.fillRect(fp.x, fp.y, selectBoxSize, selectBoxSize);
-		gra.fillRect(tp.x, tp.y, selectBoxSize, selectBoxSize);
+		gra.setColor(Color.RED);
+		gra.fillRect(fp.x - this.getLocation().x - selectBoxSize / 2, fp.y - this.getLocation().y - selectBoxSize / 2, selectBoxSize, selectBoxSize);
+		gra.fillRect(tp.x - this.getLocation().x - selectBoxSize / 2, tp.y - this.getLocation().y - selectBoxSize / 2, selectBoxSize, selectBoxSize);
 	}
 
 	public boolean isSelect()

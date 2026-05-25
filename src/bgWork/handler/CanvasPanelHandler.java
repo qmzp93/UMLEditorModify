@@ -113,7 +113,27 @@ public class CanvasPanelHandler extends PanelHandler
 	}
 
 	void selectByClick(MouseEvent e)
-	{
+	{	
+		// 1. 先行測試是否點擊到任何 UML 物件的 Port 邊界
+		if (highlightLinesByPort(e))
+		{
+			// 如果點選到 Port，則依照規格專注於線條的 Highlight，不觸發原有的物件選取事件
+			repaintComp();
+			return;
+		}
+
+		// 2. 規格要求：點擊其他地方（非Port區），已 highlight 的線要取消 highlight
+		int count = contextPanel.getComponentCount();
+		for (int i = 0; i < count; i++)
+		{
+			java.awt.Component comp = contextPanel.getComponent(i);
+			if (core.isLine(comp) != -1)
+			{
+				setSelectAllType(comp, false); // 取消所有線條的選取狀態
+			}
+		}
+
+		// 3. 原專案既有的點擊選取物件邏輯（完全保留，不破壞原架構）
 		boolean isSelect = false;
 		selectComp = new Vector <>();
 		for (int i = 0; i < members.size(); i ++)
@@ -617,5 +637,91 @@ public class CanvasPanelHandler extends PanelHandler
 			// 放置元件，此時 Release 點就會完美對齊右下角了
 			addObject(newObj, new Point(posX, posY));
 		}
+	}
+
+	private boolean highlightLinesByPort(MouseEvent e)
+	{
+		int count = contextPanel.getComponentCount();
+		
+		// 第一階段：尋找被點擊到的 Port
+		for (int i = 0; i < count; i++)
+		{
+			java.awt.Component comp = contextPanel.getComponent(i);
+			int type = core.isFuncComponent(comp); // 0: Class, 1: UseCase
+			
+			if (type == 0 || type == 1)
+			{
+				JPanel member = (JPanel) comp;
+				if (isInside(member, e.getPoint()))
+				{
+					// 將點擊點轉換為元件內部相對座標
+					int mx = e.getPoint().x - member.getLocation().x;
+					int my = e.getPoint().y - member.getLocation().y;
+					
+					int w = member.getWidth();
+					int h = member.getHeight();
+					int clickThreshold = 15; // 點擊感應半徑範圍
+					
+					int targetSide = -1;
+					
+					// 判定使用者精準點中了哪一個 Port (3:TOP, 2:RIGHT, 1:LEFT, 0:BOTTOM)
+					if (my >= 0 && my <= clickThreshold && mx >= w/4 && mx <= 3*w/4) targetSide = 3;
+					else if (mx >= w - clickThreshold && mx <= w && my >= h/4 && my <= 3*h/4) targetSide = 2;
+					else if (mx >= 0 && mx <= clickThreshold && my >= h/4 && my <= 3*h/4) targetSide = 1;
+					else if (my >= h - clickThreshold && my <= h && mx >= w/4 && mx <= 3*w/4) targetSide = 0;
+					
+					// 如果確實有點擊到 Port
+					if (targetSide != -1)
+					{
+						boolean hasConnectedLine = false;
+						
+						// 先把目前所有的線條選取狀態全部清除
+						for (int j = 0; j < count; j++) {
+							java.awt.Component c = contextPanel.getComponent(j);
+							if (core.isLine(c) != -1) setSelectAllType(c, false);
+						}
+						
+						// 第二階段：遍歷畫布所有連線，尋找與該 (member + targetSide) 綁定的連線
+						for (int j = 0; j < count; j++)
+						{
+							java.awt.Component lineComp = contextPanel.getComponent(j);
+							if (core.isLine(lineComp) != -1)
+							{
+								try {
+									// 透過反射安全調閱各種類線條基底類別中隱藏的連線欄位
+									Class<?> lineClass = lineComp.getClass();
+									java.lang.reflect.Field fromField = lineClass.getDeclaredField("from");
+									java.lang.reflect.Field fromSideField = lineClass.getDeclaredField("fromSide");
+									java.lang.reflect.Field toField = lineClass.getDeclaredField("to");
+									java.lang.reflect.Field toSideField = lineClass.getDeclaredField("toSide");
+									
+									fromField.setAccessible(true);
+									fromSideField.setAccessible(true);
+									toField.setAccessible(true);
+									toSideField.setAccessible(true);
+									
+									JPanel lFrom = (JPanel) fromField.get(lineComp);
+									int lFromSide = (int) fromSideField.get(lineComp);
+									JPanel lTo = (JPanel) toField.get(lineComp);
+									int lToSide = (int) toSideField.get(lineComp);
+									
+									// 檢查這條線的起點或終點，有沒有剛好插在這個被點擊的 Port 上
+									if ((lFrom == member && lFromSide == targetSide) || (lTo == member && lToSide == targetSide))
+									{
+										setSelectAllType(lineComp, true); // 進行 Highlight！
+										hasConnectedLine = true;
+									}
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+							}
+						}
+						// 規格要求：點擊到沒有連線的 port，亦不觸發物件選取（維持原樣，畫面刷新）
+						return true; 
+					}
+				}
+			}
+		}
+		return false; // 沒有點選到任何 Port，交回原 selectByClick 流程處理
 	}
 }
