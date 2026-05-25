@@ -95,6 +95,7 @@ public class CanvasPanelHandler extends PanelHandler
 				break;
 			case 4:
 			case 5:
+				dragToAddObject(dp);
 				break;
 			default:
 				break;
@@ -557,5 +558,64 @@ public class CanvasPanelHandler extends PanelHandler
 			return this.core.getCurrentFuncIndex();
 		}
 		return -1;
+	}
+
+	private void dragToAddObject(DragPack dp)
+	{
+		Point from = dp.getFrom();
+		Point to = dp.getTo();
+		
+		// 規則：若起迄座標相同（單純點擊），維持原樣，不觸發拖曳建立
+		if (from.equals(to))
+		{
+			return; 
+		}
+		
+		// 限制物件最小 x, y 間距
+		int minW = 80;
+		int minH = 50;
+		
+		int rawW = Math.abs(to.x - from.x);
+		int rawH = Math.abs(to.y - from.y);
+		
+		int finalW = Math.max(rawW, minW);
+		int finalH = Math.max(rawH, minH);
+		
+		int posX, posY;
+		
+		// 規則：若間距不足，則以起始點為基準，強制產生最小間距之物件
+		if (rawW < minW) {
+			posX = (to.x < from.x) ? (from.x - minW) : from.x;
+		} else {
+			posX = Math.min(from.x, to.x);
+		}
+		
+		if (rawH < minH) {
+			posY = (to.y < from.y) ? (from.y - minH) : from.y;
+		} else {
+			posY = Math.min(from.y, to.y);
+		}
+		
+		JPanel newObj = core.getCurrentFunc(); 
+		if (newObj != null)
+		{
+			int type = core.isFuncComponent(newObj);
+			
+			if (type == 0) // BasicClass 模式
+			{
+				// 【核心 Bug 修正】：因為 BasicClass 的 paintComponent 會將高度乘以 texts.size() (預設為2)
+				// 為了讓拉出來的總高度剛好符合 finalH，傳入的單格高度必須除以 2！
+				int adjustedH = finalH / 2; 
+				((mod.instance.BasicClass) newObj).setCustomSize(new Dimension(finalW, adjustedH));
+			} 
+			else if (type == 1) // UseCase 模式
+			{
+				// UseCase 內部只有單一格，直接傳入總高度即可
+				((mod.instance.UseCase) newObj).setCustomSize(new Dimension(finalW, finalH));
+			}
+			
+			// 放置元件，此時 Release 點就會完美對齊右下角了
+			addObject(newObj, new Point(posX, posY));
+		}
 	}
 }

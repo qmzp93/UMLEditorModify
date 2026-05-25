@@ -146,4 +146,10 @@ public class BasicClass extends JPanel implements IFuncComponent, IClassPainter
 				this.getHeight() / 2 - selectBoxSize, selectBoxSize,
 				selectBoxSize * 2);
 	}
+
+	public void setCustomSize(Dimension size)
+	{
+		this.defSize = size;
+		reSize(); // 呼叫原本既有的 reSize 來同步更新 Swing 的 setSize
+	}
 }
